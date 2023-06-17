@@ -15,6 +15,8 @@ library(tsibbledata)
 
 ```
 
+## Data Preprocessing
+
 ```{r}
 df <- read.csv("FED-SVENY.csv")
 ```
@@ -34,6 +36,8 @@ df<-df %>%
 ```{r}
 head(df)
 ```
+
+## EDA
 
 ```{r}
 df %>% 
@@ -74,8 +78,102 @@ df_long %>%
 
 ```
 
-As the term for investment increases the returns are higher. </br> During the 1980s The investment percentage was the highest. </br>
+As the term for investment increases the returns are higher.
+
+During the 1980s The investment percentage was the highest.
+
+Lets choose SVENY01, SVENY07 and SVENY20 to forecast 
+
+
+```{r}
+
+
+dcap <- df_filled %>%
+  model(classical_decomposition = classical_decomposition(SVENY01, type  = 'additive'))
+```
+```{r}
+
+date_range <- data.frame(Date = seq(min(df$Date), max(df$Date), by = "day"))
+
+
+df_filled <- date_range %>%
+  left_join(df, by = "Date") %>%
+  fill(everything(), .direction = "down") %>% 
+  as_tsibble(index = Date)
+
+
+head(df_filled)
+```
+
+```{r, fig.height=8}
+df_filled %>%
+  gg_season(SVENY01, labels = "right") +
+  labs(
+    title = "Seasonal Pattern of SVENY01",
+    x = "Season",
+    y = NULL,
+    fill = "Year"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top"
+  ) +
+  guides(color = guide_legend(override.aes = list(size = 1))) +
+  guides(fill = guide_legend(override.aes = list(size = 1))) +
+  theme(legend.key.size = unit(1, "lines"))
+
+
+
+```
+
+
+The above plot we see around 1970s and 1980s there were high returns, no particular seasonlity 
+
+
+### SVENY01
+
+```{r}
+dcamp <- df_filled %>%
+  model(classical_decomposition = classical_decomposition(SVENY01, type = 'additive')) 
+```
+
+```{r, warning=FALSE}
+components(dcamp) %>% 
+  autoplot()
+```
+There is no seasonality we see but we see high variance around 1980s.
+
+### SVENY07
+
+
+
+```{r}
+dcamp <- df_filled %>%
+  model(classical_decomposition = classical_decomposition(SVENY07, type = 'additive')) 
+```
+
+```{r, warning=FALSE}
+components(dcamp) %>% 
+  autoplot()
+```
+More variance than SVENYO1 more on the positive side
+
+
+### SVENY20
+
+```{r}
+dcamp <- df_filled %>%
+  model(classical_decomposition = classical_decomposition(SVENY20, type = 'additive')) 
+```
+
+```{r, warning=FALSE}
+components(dcamp) %>% 
+  autoplot()
+```
+
 
 ```{r}
 
 ```
+
+
