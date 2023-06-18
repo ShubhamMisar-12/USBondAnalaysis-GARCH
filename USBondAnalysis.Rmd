@@ -307,69 +307,44 @@ library(rugarch)
 
 
 ```{r}
-df_filtered <- df_filled %>% 
-  filter(Date > '2022-01-01')
-```
-
-
-```{r}
-pacf(df_filtered$SVENY01, lag.max = 20) 
+pacf(df_filled$SVENY01, lag.max = 20) 
 ```
 
 ```{r}
-pacf(df_filtered$SVENY07, lag.max = 20) 
+pacf(df_filled$SVENY07, lag.max = 20) 
 ```
 
+### SVENY01
 
-
-```{r}
-pacf(df_filtered$SVENY20, lag.max = 20) 
-```
 
 ```{r}
 train_data <- df %>% 
-  filter(Date < '2022-01-01' & Date > '1900-01-01')
+  filter(Date < '2022-01-01') 
 ```
-
-
 
 ```{r}
-train_01 <- train_data %>%
-  mutate(difference = SVENY01 - lag(SVENY01))
+test_data <- df %>% 
+  filter(Date > '2022-01-01')
 ```
 
+#### Fitting Model
 
 ```{r}
 spec <- ugarchspec(distribution.model = "sstd")
+fit <- ugarchfit(na.omit(diff(train_data$SVENY01)), spec = spec)
+volalality <- sigma(fit)
 ```
 
-
-```{r}
-fit_01 <- ugarchfit(na.omit(train_01$difference), spec = spec)
-```
-
-
-```{r}
-vol_01 <- sigma(fit_01)
-```
-
-```{r , warning= FALSE}
-plot(vol_01)
-df %>%
-  autoplot(SVENY01 %>% difference(1))+
-  labs(x = "Time", y = "1 Year")
-```
-
+#### Training Forecast
 
 ```{r, warning=FALSE}
 
-
 p1 <- ggplot() +
-  geom_line(aes(x = seq_along(vol_01), y = vol_01), color = "blue") +
+  geom_line(aes(x = seq_along(volalality), y = volalality), color = "blue") +
   labs(x = "Time", y = "Volatility")
 
 
-p2 <- df %>%
+p2 <- train_data %>%
   mutate(difference = c(NA, diff(SVENY01))) %>%
   ggplot() +
   geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
@@ -384,9 +359,184 @@ print(combined_plot)
 ```
 
 ```{r}
-
+dim(test_data)
 ```
 
 
 
+#### Test Forecast
+
+```{r}
+predictions <- ugarchforecast(fit, n.ahead = 321)
+
+test_volatality <- sigma(predictions)
+```
+
+
+
+```{r}
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(test_volatality), y = test_volatality), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- test_data %>%
+  mutate(difference = c(NA, diff(SVENY07))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "1 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+```
+
+### SVENY07
+
+
+#### Fitting Model
+
+```{r}
+spec <- ugarchspec(distribution.model = "sstd")
+fit <- ugarchfit(na.omit(diff(train_data$SVENY01)), spec = spec)
+volalality <- sigma(fit)
+```
+
+#### Training Forecast
+
+```{r, warning=FALSE}
+
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(volalality), y = volalality), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- train_data %>%
+  mutate(difference = c(NA, diff(SVENY07))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "7 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+
+```
+
+```{r}
+dim(test_data)
+```
+
+
+
+#### Test Forecast
+
+```{r}
+predictions <- ugarchforecast(fit, n.ahead = 321)
+
+test_volatality <- sigma(predictions)
+```
+
+
+
+```{r}
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(test_volatality), y = test_volatality), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- test_data %>%
+  mutate(difference = c(NA, diff(SVENY01))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "7 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+```
+
+### SVENY20
+
+```{r}
+train_data <- df %>% 
+  filter(Date < '2022-01-01' & Date > '2000-01-01') 
+```
+
+```{r}
+test_data <- df %>% 
+  filter(Date > '2022-01-01')
+```
+
+#### Fitting Model
+
+```{r}
+spec <- ugarchspec(distribution.model = "sstd")
+fit <- ugarchfit(na.omit(diff(train_data$SVENY20)), spec = spec)
+volalality <- sigma(fit)
+```
+
+#### Training Forecast
+
+```{r, warning=FALSE}
+
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(volalality), y = volalality), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- train_data %>%
+  mutate(difference = c(NA, diff(SVENY20))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "7 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+
+```
+
+```{r}
+dim(test_data)
+```
+
+
+
+#### Test Forecast
+
+```{r}
+predictions <- ugarchforecast(fit, n.ahead = 321)
+
+test_volatality <- sigma(predictions)
+```
+
+
+
+```{r}
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(test_volatality), y = test_volatality), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- test_data %>%
+  mutate(difference = c(NA, diff(SVENY20))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "7 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+```
 
