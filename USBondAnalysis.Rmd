@@ -259,8 +259,6 @@ Post Recovery the SVENY01 value went up.
 
 ## Moelling
 
-### Check Stationarity
-
 ```{r, warning=FALSE}
 df %>%
   autoplot(SVENY01 %>% difference(1))
@@ -279,69 +277,22 @@ The series is stationary but challenge here is to predict the volatility, as it 
 
 Therefore we use GARCH model.
 
-## Analyzing Variance
-
-
-```{r}
-df_filtered <- df_filled %>% 
-  filter(Date > '1982-01-01') 
-```
-
-
-```{r}
-pacf(df_filtered$SVENY01, lag.max = 20) 
-```
-
-```{r}
-pacf(df_filtered$SVENY07, lag.max = 20) 
-```
-
-```{r}
-pacf(df_filtered$SVENY20, lag.max = 20) 
-```
-
-
-
-```{r}
-model <- ts_data %>%
-  model(ARIMA = ARIMA(value))
-
-```
-
-
-
-We can model GARCH(1,1) model based on the PACF plot.
-
-
-```{r}
-dcamp_01 <- df_filled %>%
-  filter(Date > '2010-01-01') %>% 
-  model(classical_decomposition = classical_decomposition(SVENY01, type = 'additive')) 
-
-dcamp_07 <- df_filled %>%
-  filter(Date > '2010-01-01') %>% 
-  model(classical_decomposition = classical_decomposition(SVENY07, type = 'additive')) 
-
-dcamp_20 <- df_filled %>%
-  filter(Date > '2010-01-01') %>% 
-  model(classical_decomposition = classical_decomposition(SVENY20, type = 'additive')) 
-```
-
 
 ```{r warning=FALSE}
 library(cowplot)
 library(forecast)
 
-plot1 <- components(dcamp_01) %>% 
-  autoplot(random) +
+plot1 <- df %>%
+  autoplot(SVENY01 %>% difference(1))+
   labs(x = "Time", y = "1 Year")
 
-plot2 <- components(dcamp_07) %>% 
-  autoplot(random) +
+plot2 <- df %>%
+  autoplot(SVENY07 %>% difference(1))+
   labs(x = "Time", y = "7 Year")
 
-plot3 <- components(dcamp_20) %>% 
-  autoplot(random) +
+
+plot3 <- df %>%
+  autoplot(SVENY20 %>% difference(1)) +
   labs(x = "Time", y = "20 Year")
 
 plot_grid(plot1, plot2, plot3, ncol = 1, labels = c("A", "B", "C"))
@@ -376,35 +327,65 @@ pacf(df_filtered$SVENY20, lag.max = 20)
 ```
 
 ```{r}
-spec <-
-  ugarchspec(
-    variance.model = list(
-      model = "sGARCH",
-      garchOrder = c(1, 1),
-      submodel = NULL,
-      external.regressors = NULL,
-      variance.targeting = FALSE
-    ),
-    mean.model = list(armaOrder = c(0, 0),
-                      include.mean = TRUE),
-    distribution.model = "sged"
-  )
+train_data <- df %>% 
+  filter(Date < '2022-01-01' & Date > '1900-01-01')
+```
 
 
-gfit <- ugarchfit(spec, df$SVENY01,
-                 solver = "hybrid")
 
+```{r}
+train_01 <- train_data %>%
+  mutate(difference = SVENY01 - lag(SVENY01))
 ```
 
 
 ```{r}
-summary(gfit)
+spec <- ugarchspec(distribution.model = "sstd")
 ```
 
 
+```{r}
+fit_01 <- ugarchfit(na.omit(train_01$difference), spec = spec)
+```
 
 
+```{r}
+vol_01 <- sigma(fit_01)
+```
 
+```{r , warning= FALSE}
+plot(vol_01)
+df %>%
+  autoplot(SVENY01 %>% difference(1))+
+  labs(x = "Time", y = "1 Year")
+```
+
+
+```{r, warning=FALSE}
+
+
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(vol_01), y = vol_01), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- df %>%
+  mutate(difference = c(NA, diff(SVENY01))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "1 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+
+```
+
+```{r}
+
+```
 
 
 
