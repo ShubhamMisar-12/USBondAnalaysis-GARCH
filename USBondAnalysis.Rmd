@@ -141,6 +141,7 @@ dcamp <- df_filled %>%
 components(dcamp) %>% 
   autoplot()
 ```
+
 There is no seasonality we see but we see high variance around 1980s.
 
 ### SVENY07
@@ -171,9 +172,138 @@ components(dcamp) %>%
   autoplot()
 ```
 
+The data is shifting since 2020 lets looks closer.
+
 
 ```{r}
+df %>%
+  filter( "2020-08-01" > Date & Date > "2019-05-01" ) %>%
+  ggplot() +
+  geom_line(aes(x = Date, y = SVENY01, color = "SVENY01"), linetype = "solid", size = 0.8) +
+  geom_line(aes(x = Date, y = SVENY20, color = "SVENY20"), linetype = "solid", size = 0.8) +
+  geom_line(aes(x = Date, y = SVENY07, color = "SVENY07"), linetype = "solid", size = 0.8) +
+  geom_line(aes(x = Date, y = SVENY30, color = "SVENY30"), linetype = "solid", size = 0.8) +
+  labs(
+    x = "Date",
+    y = "Bond Yield",
+    title = "Bond Yield Comparison Just Before COVID",
+    color = "Series",
+    linetype = "Series"
+  ) +
+  scale_color_manual(
+    values = c("#0072B2", "#D55E00", "#009E73", "#CC79A7"),
+    labels = c("SVENY01", "SVENY20", "SVENY07", "SVENY30")
+  ) +
+  scale_linetype_manual(
+    values = c("solid", "solid", "solid", "solid"),
+    labels = c("SVENY01", "SVENY20", "SVENY07", "SVENY30")
+  ) +
+  theme_minimal() +
+  guides(
+    color = guide_legend(override.aes = list(linetype = "solid")),
+    linetype = guide_legend()
+  )
+
 
 ```
+
+Bond values decreased from March 2020 specifically for SVENY01 went down far down.
+
+```{r}
+df %>%
+  filter(Date > "2022-05-01") %>%
+  ggplot() +
+  geom_line(aes(x = Date, y = SVENY01, color = "SVENY01"), linetype = "solid", size = 0.8) +
+  geom_line(aes(x = Date, y = SVENY20, color = "SVENY20"), linetype = "solid", size = 0.8) +
+  geom_line(aes(x = Date, y = SVENY07, color = "SVENY07"), linetype = "solid", size = 0.8) +
+  geom_line(aes(x = Date, y = SVENY30, color = "SVENY30"), linetype = "solid", size = 0.8) +
+  labs(
+    x = "Date",
+    y = "Bond Yield",
+    title = "Bond Yield Comparison After COVID",
+    color = "Series",
+    linetype = "Series"
+  ) +
+  scale_color_manual(
+    values = c("#0072B2", "#D55E00", "#009E73", "#FC79B2"),
+    labels = c("SVENY01", "SVENY20", "SVENY07", "SVENY30")
+  ) +
+  scale_linetype_manual(
+    values = c("solid", "solid", "solid", "solid"),
+    labels = c("SVENY01", "SVENY20", "SVENY07", "SVENY30")
+  ) +
+  theme_minimal() +
+  guides(
+    color = guide_legend(override.aes = list(linetype = "solid")),
+    linetype = guide_legend()
+  )
+
+```
+
+Post Recovery the SVENY01 value went up.
+
+
+## Moelling
+
+### Check Stationarity
+
+```{r, warning=FALSE}
+df %>%
+  autoplot(SVENY01 %>% difference(1))
+```
+
+```{r, warning=FALSE}
+df %>%
+  autoplot(SVENY01 %>% difference(7))
+```
+```{r, warning=FALSE}
+df %>%
+  autoplot(SVENY01 %>% difference(20))
+```
+
+The series is stationary but challenge here is to predict the volatility, as it is important aspect in the financial markets.
+
+Therefore we use GARCH model.
+
+## Garch
+
+```{r}
+library(rugarch)
+```
+
+
+```{r}
+df_filled %>% 
+  pacf(SVENY01)
+```
+
+
+```{r}
+ts_data <- ts(tsibble_data$value)
+
+spec <- ugarchspec(variance.model = list(model = "sGARCH", garchOrder = c(1, 1)),
+                   mean.model = list(armaOrder = c(0, 0)))
+
+garch_model <- ugarchfit(spec = spec, data = ts_data)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
