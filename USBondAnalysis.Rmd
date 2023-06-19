@@ -608,7 +608,7 @@ p2 <- test_data %>%
   mutate(difference = c(NA, diff(SVENY20))) %>%
   ggplot() +
   geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
-  labs(x = "Time", y = "7 Year")
+  labs(x = "Time", y = "1 Year")
 
 
 combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
@@ -651,7 +651,7 @@ p2 <- test_data %>%
   mutate(difference = c(NA, diff(SVENY01))) %>%
   ggplot() +
   geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
-  labs(x = "Time", y = "7 Year")
+  labs(x = "Time", y = "1 Year")
 
 
 combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
@@ -660,3 +660,6 @@ combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
 print(combined_plot)
 
 ```
+
+**Even Better Prediction can be seen**
+
