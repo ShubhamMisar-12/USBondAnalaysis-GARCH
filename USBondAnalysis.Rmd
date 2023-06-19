@@ -354,6 +354,10 @@ fit <- ugarchfit(na.omit(diff(train_data$SVENY01)), spec = spec)
 volalality <- sigma(fit)
 ```
 
+```{r}
+fit
+```
+
 
 #### Training Forecast
 
@@ -616,3 +620,43 @@ print(combined_plot)
 
 
 Now we try it with 5 days 
+
+
+
+```{r}
+series <- train_data$SVENY01
+```
+
+
+```{r}
+rolling_predictions <- c()
+for (i in seq(1, nrow(test_data), 5)) {
+  train <- series[1:(length(series) - (nrow(test_data) - i)) ]
+  fit <- ugarchfit(train, spec = spec)
+  volalality <- sigma(fit)
+  predictions <- ugarchforecast(fit, n.ahead = 5)
+  test_volatality <- sigma(predictions)
+  rolling_predictions <- c(rolling_predictions, test_volatality)
+}
+```
+
+
+```{r}
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(rolling_predictions), y = rolling_predictions), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- test_data %>%
+  mutate(difference = c(NA, diff(SVENY01))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "7 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+
+```
