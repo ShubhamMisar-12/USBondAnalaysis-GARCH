@@ -47,15 +47,19 @@ df %>%
   autoplot(SVENY01) +
   labs(
     x = "Date",
-    y = "1 Year Bond",
+    y = "Returns",
     title = "1 Year Bond Returns"
   )
 ```
+
+For the 1980s the returns were the highest, which declined over time till 2020 and then picked up again.
+
 
 ```{r}
 df_long <- df %>%
   pivot_longer(cols = -Date, names_to = "Variable", values_to = "Value")
 ```
+
 
 ```{r, warning=FALSE}
 library(ggplot2)
@@ -87,6 +91,10 @@ During the 1980s The investment percentage was the highest.
 
 Lets choose SVENY01, SVENY07 and SVENY20 to forecast 
 
+
+
+The dataset we have missing dates lets backfill the data and the missing dates to decompose the data.
+
 ```{r}
 date_range <- data.frame(Date = seq(min(df$Date), max(df$Date), by = "day"))
 df_filled <- date_range %>%
@@ -95,7 +103,6 @@ df_filled <- date_range %>%
   as_tsibble(index = Date)
 
 ```
-
 
 
 ```{r}
@@ -158,8 +165,8 @@ components(dcamp) %>%
 
 There is no seasonality we see but we see high variance around 1980s.
 
-### SVENY07
 
+### SVENY07
 
 
 ```{r}
@@ -171,7 +178,7 @@ dcamp <- df_filled %>%
 components(dcamp) %>% 
   autoplot()
 ```
-More variance than SVENYO1 more on the positive side
+More variance than SVENYO1, also more on the positive side
 
 
 ### SVENY20
@@ -259,10 +266,15 @@ Post Recovery the SVENY01 value went up.
 
 ## Moelling
 
+
+Let's Model the first difference of the series
+
+
 ```{r, warning=FALSE}
 df %>%
   autoplot(SVENY01 %>% difference(1))
 ```
+
 
 ```{r, warning=FALSE}
 df %>%
@@ -298,6 +310,8 @@ plot3 <- df %>%
 plot_grid(plot1, plot2, plot3, ncol = 1, labels = c("A", "B", "C"))
 
 ```
+The returns for 1 year has the lowest variance and 7 year return has most variance.
+
 
 ## Modelling - GARCH
 
@@ -307,12 +321,17 @@ library(rugarch)
 
 
 ```{r}
-pacf(df_filled$SVENY01, lag.max = 20) 
+pacf(diff(df_filled$SVENY01) , lag.max = 20) 
 ```
 
+
 ```{r}
-pacf(df_filled$SVENY07, lag.max = 20) 
+pacf(diff(df_filled$SVENY07), lag.max = 20) 
 ```
+
+Based on the above plot lets try GARCH
+
+
 
 ### SVENY01
 
@@ -334,6 +353,7 @@ spec <- ugarchspec(distribution.model = "sstd")
 fit <- ugarchfit(na.omit(diff(train_data$SVENY01)), spec = spec)
 volalality <- sigma(fit)
 ```
+
 
 #### Training Forecast
 
@@ -362,7 +382,7 @@ print(combined_plot)
 dim(test_data)
 ```
 
-
+**The Blue line shows the volatality and orange one is the original differenced series correctly identify high varinace with a high value** 
 
 #### Test Forecast
 
@@ -392,6 +412,8 @@ combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
 
 print(combined_plot)
 ```
+
+**In this plot the variace is shown be increasing throught time however it is not so much of the case, that because we are predicting way into the future** 
 
 ### SVENY07
 
@@ -431,6 +453,7 @@ print(combined_plot)
 dim(test_data)
 ```
 
+**The Blue line shows the volatality and orange one is the original differenced series correctly identify high varinace with a high value** 
 
 
 #### Test Forecast
@@ -461,6 +484,8 @@ combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
 
 print(combined_plot)
 ```
+
+**Simialar to the above test plot for SEVNY01**
 
 ### SVENY20
 
@@ -505,6 +530,8 @@ print(combined_plot)
 
 ```
 
+**The blue train curve is going good following the orange series**
+
 ```{r}
 dim(test_data)
 ```
@@ -540,3 +567,52 @@ combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
 print(combined_plot)
 ```
 
+**In this plot the variace is shown be increasing throught time and plateaus after 200 points however it is not so much of the case, that because we are predicting way into the future** 
+
+
+## Rolling Forecast
+
+Let's use a rolling forecast method where we predict some 10 days into the future as in real world we dont expect to know forecast for years.
+
+```{r}
+series <- train_data$SVENY01
+
+
+```
+
+
+```{r}
+rolling_predictions <- c()
+for (i in seq(1, nrow(test_data), 10)) {
+  train <- series[1:(length(series) - (nrow(test_data) - i)) ]
+  fit <- ugarchfit(train, spec = spec)
+  volalality <- sigma(fit)
+  predictions <- ugarchforecast(fit, n.ahead = 10)
+  test_volatality <- sigma(predictions)
+  rolling_predictions <- c(rolling_predictions, test_volatality)
+}
+```
+
+
+```{r}
+p1 <- ggplot() +
+  geom_line(aes(x = seq_along(rolling_predictions), y = rolling_predictions), color = "blue") +
+  labs(x = "Time", y = "Volatility")
+
+
+p2 <- test_data %>%
+  mutate(difference = c(NA, diff(SVENY20))) %>%
+  ggplot() +
+  geom_line(aes(x = seq_along(difference), y = difference), color = "orange") +
+  labs(x = "Time", y = "7 Year")
+
+
+combined_plot <- cowplot::plot_grid(p1, p2, nrow = 2)
+
+
+print(combined_plot)
+```
+**This gives a way better forecast as we see.**
+
+
+Now we try it with 5 days 
