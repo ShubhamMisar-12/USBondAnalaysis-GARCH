@@ -35,7 +35,7 @@ The project provides visualizations and statistical analysis to illustrate the v
 - `USBondAnalysis.Rmd`: Performs rolling forecast and analysis using R Markdown.
 - `USBondAnalysis.Rproj`: Stores project-specific configuration settings for RStudio.
 - `requirement.R`: Specifies R package dependencies for the project.
-- `requirements.txt`: Lists Python package dependencies for the project.
+- `requirements.txt`: Lists R package dependencies for the project.
 
 ## Dependencies
 
