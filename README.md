@@ -8,7 +8,7 @@ This project aims to analyze the volatility of US bond returns using the General
 
 ## Methodology
 
-1. **Data Collection:** The project collects historical US bond returns for three maturity periods: 1 year, 7 years, and 20 years. The data is obtained from a [This site](https://data.nasdaq.com/data/FED/SVENY-us-treasury-zerocoupon-yield-curve).
+1. **Data Collection:** The project collects historical US bond returns for three maturity periods: 1 year, 7 years, and 20 years. The data is obtained from [This site](https://data.nasdaq.com/data/FED/SVENY-us-treasury-zerocoupon-yield-curve).
 
 2. **Preprocessing:** The collected bond return data is preprocessed to ensure consistency and accuracy. This includes removing any missing values, handling outliers, and ensuring proper time alignment.
 
@@ -35,7 +35,7 @@ The project provides visualizations and statistical analysis to illustrate the v
 - `USBondAnalysis.Rmd`: Performs rolling forecast and analysis using R Markdown.
 - `USBondAnalysis.Rproj`: Stores project-specific configuration settings for RStudio.
 - `requirement.R`: Specifies R package dependencies for the project.
-- `requirements.txt`: Lists Python package dependencies for the project.
+- `requirements.txt`: Lists R package dependencies for the project.
 
 ## Dependencies
 
